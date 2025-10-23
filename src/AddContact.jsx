@@ -1,5 +1,5 @@
 import { useNavigate, useParams } from 'react-router-dom'
-import { useContacts } from '../src/ContactsContext.jsx'
+import { useContacts } from './ContactsContext.jsx'
 import React from 'react'
 
 const empty = { name: '', email: '', phone: '', address: '' }

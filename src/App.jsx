@@ -1,6 +1,7 @@
 import { Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom'
-import Contacts from '../src/Contacts.jsx'
-import AddContact from '../src/AddContact.jsx'
+import Contacts from './Contacts.jsx'
+import AddContact from './AddContact.jsx'
+import ConfirmModal from './ConfirmModal.jsx' // modal global
 
 export default function App() {
     const { pathname } = useLocation()
@@ -24,6 +25,9 @@ export default function App() {
                 <Route path="/add" element={<AddContact />} />
                 <Route path="/edit/:id" element={<AddContact />} />
             </Routes>
+
+            {/* Modal siempre montado; se muestra solo si hay confirm en el contexto */}
+            <ConfirmModal />
 
             <div className="footer-space" />
         </div>
