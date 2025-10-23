@@ -3,102 +3,107 @@ import React from 'react'
 const ContactsContext = React.createContext()
 export const useContacts = () => React.useContext(ContactsContext)
 
-const API_BASE = 'https://Playground.4geeks.com/contact' // minúsculas
+const API_BASE = 'https://Playground.4geeks.com/contact' // en minúsculas
 const AGENDA_SLUG = 'my_super_agenda'
 
 export function ContactsProvider({ children }) {
   const [contacts, setContacts] = React.useState([])
   const [loading, setLoading] = React.useState(false)
   const [error, setError] = React.useState(null)
-  const [confirm, setConfirm] = React.useState(null) // { id, name }
 
-  React.useEffect(() => { bootstrap() }, [])
+  // Estado del nuevo modal de eliminación
+  const [deleteTarget, setDeleteTarget] = React.useState(null) // { id, name } | null
 
-  async function bootstrap() {
+  React.useEffect(() => { init() }, [])
+
+  async function init() {
     setLoading(true)
     try {
-      await ensureAgendaExists()
-      await fetchContacts()
-    } catch (err) {
-      console.error('[bootstrap]', err)
+      await ensureAgenda()
+      await loadContacts()
+    } catch (e) {
+      console.error(e)
       setError('No fue posible cargar los contactos.')
     } finally {
       setLoading(false)
     }
   }
 
-  async function ensureAgendaExists() {
-    const res = await fetch(`${API_BASE}/agendas/${AGENDA_SLUG}`)
-    if (res.ok) return true
-    if (res.status === 404) {
-      const create = await fetch(`${API_BASE}/agendas/${AGENDA_SLUG}`, { method: 'POST' })
-      if (!create.ok) throw new Error('No se pudo crear la agenda.')
-      return true
+  async function ensureAgenda() {
+    const r = await fetch(`${API_BASE}/agendas/${AGENDA_SLUG}`)
+    if (r.ok) return
+    if (r.status === 404) {
+      const c = await fetch(`${API_BASE}/agendas/${AGENDA_SLUG}`, { method: 'POST' })
+      if (!c.ok) throw new Error('No se pudo crear la agenda.')
+      return
     }
-    throw new Error('Error al verificar la agenda.')
+    throw new Error('Error verificando la agenda.')
   }
 
-  async function fetchContacts() {
-    const res = await fetch(`${API_BASE}/agendas/${AGENDA_SLUG}/contacts`)
-    if (!res.ok) throw new Error('Error obteniendo contactos')
-    const data = await res.json()
+  async function loadContacts() {
+    const r = await fetch(`${API_BASE}/agendas/${AGENDA_SLUG}/contacts`)
+    if (!r.ok) throw new Error('Error obteniendo contactos')
+    const data = await r.json()
     setContacts(data.contacts || [])
   }
 
-  async function addContact(payload) {
-    const res = await fetch(`${API_BASE}/agendas/${AGENDA_SLUG}/contacts`, {
+  async function createContact(payload) {
+    const r = await fetch(`${API_BASE}/agendas/${AGENDA_SLUG}/contacts`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     })
-    if (!res.ok) throw new Error('Error creando contacto')
-    const created = await res.json()
+    if (!r.ok) throw new Error('Error creando contacto')
+    const created = await r.json()
     setContacts(prev => [created, ...prev])
     return created
   }
 
-  async function updateContact(id, payload) {
-    const res = await fetch(`${API_BASE}/agendas/${AGENDA_SLUG}/contacts/${id}`, {
+  async function editContact(id, payload) {
+    const r = await fetch(`${API_BASE}/agendas/${AGENDA_SLUG}/contacts/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     })
-    if (!res.ok) throw new Error('Error actualizando contacto')
-    const updated = await res.json()
+    if (!r.ok) throw new Error('Error actualizando contacto')
+    const updated = await r.json()
     setContacts(prev => prev.map(c => (c.id === id ? updated : c)))
     return updated
   }
 
-  async function deleteContact(id) {
-    const res = await fetch(`${API_BASE}/agendas/${AGENDA_SLUG}/contacts/${id}`, { method: 'DELETE' })
-    if (!res.ok) {
-      const text = await res.text().catch(() => '')
-      console.error('[deleteContact] status:', res.status, text)
-      throw new Error('Error eliminando contacto')
+  async function removeContact(id) {
+    const r = await fetch(`${API_BASE}/agendas/${AGENDA_SLUG}/contacts/${id}`, { method: 'DELETE' })
+    if (!r.ok) {
+      const txt = await r.text().catch(() => '')
+      throw new Error(`No se pudo eliminar (${r.status}) ${txt}`)
     }
     setContacts(prev => prev.filter(c => c.id !== id))
   }
 
-  // Confirmación de borrado
-  function askDelete(id, name) {
-    console.log('[askDelete]', id, name)
-    setConfirm({ id, name })
+  // API del modal de eliminación
+  function askToDelete(contact) {
+    setDeleteTarget(contact ? { id: contact.id, name: contact.name } : null)
   }
-  function cancelDelete() {
-    setConfirm(null)
+  function closeDelete() {
+    setDeleteTarget(null)
   }
   async function confirmDelete() {
-    if (confirm?.id) {
-      console.log('[confirmDelete] deleting id', confirm.id)
-      await deleteContact(confirm.id)
-      setConfirm(null)
-    }
+    if (!deleteTarget?.id) return
+    await removeContact(deleteTarget.id)
+    setDeleteTarget(null)
   }
 
   const value = {
     contacts, loading, error,
-    addContact, updateContact, deleteContact, fetchContacts,
-    confirm, askDelete, cancelDelete, confirmDelete
+    // Nombres antiguos (compatibilidad con tu AddContact.jsx actual)
+    addContact: createContact,
+    updateContact: editContact,
+    deleteContact: removeContact,
+    fetchContacts: loadContacts,
+    // Nombres nuevos (si quieres usarlos)
+    createContact, editContact, removeContact, loadContacts,
+    // Modal eliminación
+    deleteTarget, askToDelete, closeDelete, confirmDelete
   }
 
   return <ContactsContext.Provider value={value}>{children}</ContactsContext.Provider>
