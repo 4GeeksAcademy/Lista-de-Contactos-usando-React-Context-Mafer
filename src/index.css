@@ -185,34 +185,32 @@ body {
 }
 
 /* Modal */
-.modal-backdrop {
-    position: fixed;
-    inset: 0;
-    background: rgba(2, 6, 23, .6);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
+/* Modal (nombres sin colisión con Bootstrap) */
+.cl-modal-backdrop{
+  position: fixed;
+  inset: 0;
+  background: rgba(2, 6, 23, .6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999; /* más alto que Bootstrap */
 }
 
-.modal {
-    width: 420px;
-    max-width: calc(100% - 24px);
-    background: white;
-    border-radius: 10px;
-    border: 1px solid var(--border);
-    padding: 18px;
+.cl-modal{
+  width: 420px;
+  max-width: calc(100% - 24px);
+  background: white;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  padding: 18px;
+  display: block; /* fuerza visibilidad independientemente de Bootstrap */
 }
 
-.modal h3 {
-    margin-top: 0;
-}
-
-.modal-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-    margin-top: 14px;
+.modal-actions{
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 14px;
 }
 
 
